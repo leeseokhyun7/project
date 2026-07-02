@@ -1,0 +1,16 @@
+{
+  "name": "NEON SURVIVORS — 네온 서바이버즈",
+  "short_name": "네온 서바이버즈",
+  "description": "초원 위에서 몰려오는 적을 자동 전투로 처치하며 살아남는 중독성 서바이벌 게임.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#2f7530",
+  "theme_color": "#2f7530",
+  "icons": [
+    { "src": "icon.svg", "type": "image/svg+xml", "sizes": "any", "purpose": "any" },
+    { "src": "icon-192.png", "type": "image/png", "sizes": "192x192", "purpose": "any maskable" },
+    { "src": "icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "any maskable" }
+  ]
+}
