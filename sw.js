@@ -1,9 +1,8 @@
-/* NEON SURVIVORS service worker — caches the app shell for offline play */
-const CACHE = 'neon-survivors-v1';
+﻿/* NEON SURVIVORS service worker - caches the app shell for offline play */
+const CACHE = 'neon-survivors-v20260703-premium-ui';
 const ASSETS = [
   './',
   './index.html',
-  './neon-survivors.html',
   './manifest.webmanifest',
   './icon.svg',
   './icon-192.png',
@@ -25,16 +24,32 @@ self.addEventListener('activate', (e) => {
   );
 });
 
-// Cache-first (the game is fully self-contained, so this makes it work offline)
+function putInCache(req, res) {
+  const copy = res.clone();
+  caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
+  return res;
+}
+
+// HTML uses network-first so phone installs pick up new builds quickly.
+// Static assets stay cache-first for fast offline launches.
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
+  const url = new URL(e.request.url);
+  const wantsHtml = e.request.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname.endsWith('/');
+  if (wantsHtml) {
+    e.respondWith(
+      fetch(e.request)
+        .then((res) => putInCache(e.request, res))
+        .catch(() => caches.match(e.request).then((hit) => hit || caches.match('./index.html')))
+    );
+    return;
+  }
   e.respondWith(
     caches.match(e.request).then((hit) =>
       hit || fetch(e.request).then((res) => {
-        const copy = res.clone();
-        caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
-        return res;
+        return putInCache(e.request, res);
       }).catch(() => caches.match('./index.html'))
     )
   );
 });
+
