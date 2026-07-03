@@ -1,5 +1,5 @@
 ﻿/* NEON SURVIVORS service worker - caches the app shell for offline play */
-const CACHE = 'neon-survivors-v20260703-audio-reset-boss';
+const CACHE = 'neon-survivors-v20260703-character-step';
 const ASSETS = [
   './',
   './index.html',

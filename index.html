@@ -192,7 +192,8 @@
   .feats{margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
   .feat{font-size:11px;letter-spacing:.8px;padding:6px 10px;border-radius:9px;
     background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.10);color:#d5e5f2;}
-  .start-panel{width:min(720px,94vw);}
+  .start-panel{width:min(520px,94vw);}
+  .character-panel{width:min(720px,94vw);}
   .char-grid{margin:16px auto 0;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:650px;}
   .char-card{position:relative;min-height:118px;text-align:left;padding:12px;border-radius:12px;
     background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(0,0,0,.13));
@@ -223,7 +224,7 @@
     .card .lvl-dots{justify-content:center;}
   }
   @media (max-width:560px){
-    .start-panel{width:min(430px,94vw);padding:20px 14px 34px;}
+    .start-panel,.character-panel{width:min(430px,94vw);padding:20px 14px 34px;}
     .char-grid{grid-template-columns:1fr 1fr;gap:8px;max-height:34vh;overflow:auto;padding-right:2px;}
     .char-card{min-height:105px;padding:10px;}
     .char-name{font-size:12px;}
@@ -293,7 +294,6 @@
         <div class="feat">💰 영구 강화</div>
         <div class="feat">🧬 캐릭터 해금</div>
       </div>
-      <div class="char-grid" id="charGrid"></div>
       <div class="hint">
         <b>PC</b> : WASD / 방향키로 이동<br>
         <b>모바일</b> : 화면을 끌어 조이스틱 이동<br>
@@ -303,7 +303,20 @@
       <div class="btn" id="startBtn">게임 시작 ▶</div>
       <div class="btn ghost" id="shopBtn" style="margin-top:12px">🛒 영구 강화 상점 · 💰 <span id="goldBal">0</span></div>
     </div>
-    <div class="app-version">현재 버전 <span id="versionText">v20260703-audio-reset-boss</span></div>
+    <div class="app-version">현재 버전 <span id="versionText">v20260703-character-step</span></div>
+  </div>
+
+  <!-- Character Select -->
+  <div class="overlay" id="charOverlay">
+    <div class="panel character-panel">
+      <div class="lvhead" style="font-size:clamp(24px,7vw,36px)">캐릭터 선택</div>
+      <div class="lvsub">시작 무기와 고유 능력이 달라집니다</div>
+      <div class="char-grid" id="charGrid"></div>
+      <div class="over-actions">
+        <div class="btn ghost" id="charBackBtn">뒤로</div>
+        <div class="btn" id="charStartBtn">선택 완료 ▶</div>
+      </div>
+    </div>
   </div>
 
   <!-- Shop -->
@@ -381,7 +394,7 @@ const rand=(a,b)=>a+Math.random()*(b-a);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v;
 const dist2=(x1,y1,x2,y2)=>{const dx=x1-x2,dy=y1-y2;return dx*dx+dy*dy;};
 const TAU=Math.PI*2;
-const APP_VERSION='v20260703-audio-reset-boss';
+const APP_VERSION='v20260703-character-step';
 $('versionText').textContent=APP_VERSION;
 
 // ============================================================ audio (WebAudio, no assets)
@@ -1650,9 +1663,20 @@ function startGame(){
   if(!META.chars[selectedChar]){ selectedChar='ranger'; renderCharacters(); }
   reset(); clearInput(); state='play';
   $('startOverlay').style.display='none';
+  $('charOverlay').style.display='none';
   $('overOverlay').style.display='none';
   $('pauseBtn').style.display='grid'; $('soundBtn').style.display='grid'; $('musicBtn').style.display='grid';
   AudioFX.ensure(); if(musicOn) AudioFX.startMusic(); last=performance.now();
+}
+function openCharacterSelect(){
+  clearInput(); renderCharacters();
+  $('startOverlay').style.display='none';
+  $('overOverlay').style.display='none';
+  $('charOverlay').style.display='grid';
+}
+function closeCharacterSelect(){
+  $('charOverlay').style.display='none';
+  $('startOverlay').style.display='grid';
 }
 function gameOver(){
   state='over'; clearInput(); AudioFX.over(); vibrate([40,60,120]);
@@ -1681,7 +1705,9 @@ function togglePause(){
     last=performance.now(); }
 }
 
-$('startBtn').onclick=startGame;
+$('startBtn').onclick=openCharacterSelect;
+$('charStartBtn').onclick=startGame;
+$('charBackBtn').onclick=closeCharacterSelect;
 $('retryBtn').onclick=startGame;
 $('resumeBtn').onclick=togglePause;
 $('pauseBtn').onclick=togglePause;
@@ -1727,7 +1753,7 @@ function renderCharacters(){
     if(unlocked) el.onclick=()=>{ selectedChar=id; try{localStorage.setItem('ns_char',id);}catch(e){} renderCharacters(); };
     grid.appendChild(el);
   }
-  const btn=$('startBtn'); if(btn) btn.textContent='게임 시작 ▶ · '+CHARACTERS[selectedChar].name;
+  const btn=$('charStartBtn'); if(btn) btn.textContent='선택 완료 ▶ · '+CHARACTERS[selectedChar].name;
 }
 loadMeta();
 let shopReturn='start';
@@ -1816,7 +1842,7 @@ function loop(now){
 player=newPlayer(); enemies=[];projectiles=[];gems=[];chests=[];particles=[];texts=[];orbs=[];
 requestAnimationFrame(loop);
 })();
-/* build:v20260703-audio-reset-boss */
+/* build:v20260703-character-step */
 </script>
 <script>
 // Offline install (PWA): only over http/https, never on file://
