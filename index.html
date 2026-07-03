@@ -280,7 +280,7 @@
       <div class="btn" id="startBtn">게임 시작 ▶</div>
       <div class="btn ghost" id="shopBtn" style="margin-top:12px">🛒 영구 강화 상점 · 💰 <span id="goldBal">0</span></div>
     </div>
-    <div class="app-version">현재 버전 <span id="versionText">v20260703-version-label</span></div>
+    <div class="app-version">현재 버전 <span id="versionText">v20260703-upgrade-rebalance</span></div>
   </div>
 
   <!-- Shop -->
@@ -357,7 +357,7 @@ const rand=(a,b)=>a+Math.random()*(b-a);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v;
 const dist2=(x1,y1,x2,y2)=>{const dx=x1-x2,dy=y1-y2;return dx*dx+dy*dy;};
 const TAU=Math.PI*2;
-const APP_VERSION='v20260703-version-label';
+const APP_VERSION='v20260703-upgrade-rebalance';
 $('versionText').textContent=APP_VERSION;
 
 // ============================================================ audio (WebAudio, no assets)
@@ -453,18 +453,27 @@ const WEAPONS={
         get:(l)=>({rate:1.55-0.10*l, dmg:12+6*l, len:245+26*l, width:12+2.5*l})},
   chain:{name:'체인 라이트닝',icon:'🌩️',desc:'가까운 적을 감전, 주변으로 전이',max:6,
         get:(l)=>({rate:1.9-0.12*l, dmg:12+6*l, jumps:1+Math.floor(l/2), range:165+14*l})},
+  grenade:{name:'파편 로켓',icon:'🚀',desc:'밀집한 적에게 폭발탄을 발사',max:6,
+        get:(l)=>({rate:2.45-0.16*l, dmg:18+7*l, radius:70+9*l, speed:330, count:1+(l>=4?1:0)})},
 };
 const PASSIVES={
   spd:{name:'가속 부츠',icon:'👟',desc:'이동 속도 +12%',max:5},
   magnet:{name:'자력장',icon:'🧲',desc:'젬을 더 빠르고 넓게 끌어옵니다 (+90)',max:5},
   power:{name:'증폭기',icon:'🔥',desc:'모든 피해 +15%',max:6},
+  haste:{name:'가속 코일',icon:'⏱️',desc:'모든 무기 재사용 대기시간 -8%',max:5},
+  guard:{name:'방어막 장갑',icon:'🛡️',desc:'받는 피해 -9%',max:5},
+  crit:{name:'치명 회로',icon:'🎯',desc:'치명타 확률 +8%',max:5},
+  wisdom:{name:'전술 분석',icon:'⭐',desc:'경험치 획득 +12%',max:5},
+  luck:{name:'행운 부적',icon:'🍀',desc:'엘리트와 추가 골드 발견 확률 증가',max:4},
 };
 // weapon evolutions: max the weapon + own its paired passive -> evolve
 const EVO={
   bolt:{req:'power', name:'플라즈마 볼트', icon:'🔫', desc:'관통 무한 · 탄환 대폭 증가 · 피해 급증'},
   orbit:{req:'spd',  name:'블레이드 스톰', icon:'🌀', desc:'칼날 폭증 · 광역/피해 강화'},
-  nova:{req:'power', name:'슈퍼노바',     icon:'💥', desc:'초대형 폭발 · 피해 급증'},
+  nova:{req:'guard', name:'슈퍼노바',     icon:'💥', desc:'초대형 폭발 · 피해 급증'},
   beam:{req:'magnet',name:'프리즘 레이저', icon:'⚡', desc:'2연발 · 관통/피해 강화'},
+  chain:{req:'haste',name:'스톰 체인',     icon:'🌩️', desc:'전이 횟수 폭증 · 전격 피해 강화'},
+  grenade:{req:'crit',name:'메테오 로켓',  icon:'🚀', desc:'대형 폭발 · 연속 발사 강화'},
 };
 // permanent meta upgrades (persist across runs)
 const META_DEFS={
@@ -474,6 +483,10 @@ const META_DEFS={
   xp:    {name:'현자의 눈', icon:'⭐', desc:'경험치 획득 +10%',   max:6, cost:l=>230+l*190},
   magnet:{name:'수집가',   icon:'🧲', desc:'시작 자력 +45',      max:5, cost:l=>180+l*160},
   gold:  {name:'황금손',   icon:'💰', desc:'골드 획득 +12%',     max:6, cost:l=>300+l*240},
+  armor: {name:'방탄 플레이트', icon:'🛡️', desc:'받는 피해 -4%',  max:8, cost:l=>210+l*175},
+  haste: {name:'정밀 기어', icon:'⏱️', desc:'무기 대기시간 -4%',   max:8, cost:l=>240+l*195},
+  crit:  {name:'약점 분석', icon:'🎯', desc:'치명타 확률 +3%',     max:8, cost:l=>250+l*205},
+  luck:  {name:'전리품 감지기', icon:'🍀', desc:'추가 보상 발견률 증가', max:6, cost:l=>280+l*220},
 };
 let META={gold:0, up:{}};
 function loadMeta(){ try{ META=JSON.parse(localStorage.getItem('ns_meta'))||{gold:0,up:{}}; }catch(e){ META={gold:0,up:{}}; }
@@ -485,8 +498,8 @@ function newPlayer(){
   const p={ x:0,y:0,r:16, baseSpeed:218, hp:100, maxhp:100,
     xp:0, level:1, next:5, kills:0, xpMul:1,
     weapons:{bolt:1}, passives:{}, ev:{},
-    dmgMul:1, spdMul:1, magnet:0, invuln:0,
-    boltT:0, novaT:0, beamT:0, chainT:0, orbAngle:0, face:{x:1,y:0}, dir:1, moving:false, walkPhase:0 };
+    dmgMul:1, spdMul:1, coolMul:1, magnet:0, dr:0, crit:0, luck:0, invuln:0,
+    boltT:0, novaT:0, beamT:0, chainT:0, grenadeT:0, orbAngle:0, face:{x:1,y:0}, dir:1, moving:false, walkPhase:0 };
   // apply permanent meta upgrades
   const u=META.up||{};
   if(u.hp){ p.maxhp+=20*u.hp; p.hp=p.maxhp; }
@@ -494,6 +507,10 @@ function newPlayer(){
   if(u.spd) p.spdMul+=0.05*u.spd;
   if(u.xp)  p.xpMul+=0.10*u.xp;
   if(u.magnet) p.magnet+=45*u.magnet;
+  if(u.armor) p.dr+=0.04*u.armor;
+  if(u.haste) p.coolMul*=Math.pow(0.96,u.haste);
+  if(u.crit) p.crit+=0.03*u.crit;
+  if(u.luck) p.luck+=0.5*u.luck;
   return p;
 }
 
@@ -539,7 +556,7 @@ function spawnEnemy(){
   else if(tier<0.955){ e={type:'splitter',r:16,hp:26+df*8,spd:rand(50,70),dmg:10,xp:2,color:'#39e6a8'};}
   else { e={type:'shooter',r:13,hp:20+df*7,spd:rand(50,70),dmg:7,xp:2,color:'#00f0ff',shootT:rand(1,2.5)};}
   // rare ELITE: tough, glowing, guaranteed loot
-  if(df>0.5 && e.type!=='splitter' && Math.random()<0.05){
+  if(df>0.5 && e.type!=='splitter' && Math.random()<Math.min(0.10,0.05+0.006*(player.luck||0))){
     e.elite=true; e.hp*=3.4; e.r+=6; e.dmg=Math.round(e.dmg*1.4); e.xp=(e.xp||1)+6; e.spd*=0.9; }
   e.x=clamp(x,-MAP+e.r,MAP-e.r); e.y=clamp(y,-MAP+e.r,MAP-e.r);
   e.maxhp=e.hp;e.hit=0;e.kb={x:0,y:0};e.phase=rand(0,TAU);
@@ -638,7 +655,7 @@ function update(dt){
   // phase 'boss' ends when the boss is defeated (see onBossDefeated)
 
   // ---- weapons ----
-  weaponBolt(dt); weaponNova(dt); weaponBeam(dt); weaponOrbit(dt); weaponChain(dt);
+  weaponBolt(dt); weaponNova(dt); weaponBeam(dt); weaponOrbit(dt); weaponChain(dt); weaponGrenade(dt);
 
   // ---- enemies ----
   for(let i=enemies.length-1;i>=0;i--){
@@ -682,7 +699,7 @@ function update(dt){
   // ---- projectiles ----
   for(let i=projectiles.length-1;i>=0;i--){
     const p=projectiles[i]; p.x+=p.vx*dt; p.y+=p.vy*dt; p.life-=dt;
-    if(p.life<=0){ projectiles.splice(i,1); continue; }
+    if(p.life<=0){ if(p.explode&&!p.foe) explodeProjectile(p,i); else projectiles.splice(i,1); continue; }
     if(p.foe){
       if(dist2(p.x,p.y,player.x,player.y)<(p.r+player.r)**2){
         if(player.invuln<=0) damagePlayer(p.dmg);
@@ -694,9 +711,12 @@ function update(dt){
     for(let j=enemies.length-1;j>=0;j--){
       const e=enemies[j];
       if(dist2(p.x,p.y,e.x,e.y)<(p.r+e.r)**2){
-        hitEnemy(e,p.dmg,p.vx,p.vy);
-        burst(p.x,p.y,p.color,4,120,.3);
-        if(p.pierce>0){ p.pierce--; } else { projectiles.splice(i,1); removed=true; }
+        if(p.explode){ explodeProjectile(p,i); removed=true; }
+        else {
+          hitEnemy(e,p.dmg,p.vx,p.vy);
+          burst(p.x,p.y,p.color,4,120,.3);
+          if(p.pierce>0){ p.pierce--; } else { projectiles.splice(i,1); removed=true; }
+        }
         break;
       }
     }
@@ -734,7 +754,7 @@ function weaponBolt(dt){
   const s=WEAPONS.bolt.get(lv); if(player.ev.bolt){ s.count+=3; s.pierce=99; s.dmg*=1.7; s.rate*=0.85; } player.boltT-=dt;
   if(player.boltT<=0){
     const targets=nearestEnemies(s.count);
-    if(targets.length){ player.boltT=s.rate;
+    if(targets.length){ player.boltT=cooldown(s.rate);
       targets.forEach(t=>{ const a=Math.atan2(t.y-player.y,t.x-player.x);
         projectiles.push({x:player.x,y:player.y,vx:Math.cos(a)*s.speed,vy:Math.sin(a)*s.speed,
           r:player.ev.bolt?8:6,dmg:s.dmg*player.dmgMul,life:1.6,pierce:s.pierce,color:player.ev.bolt?'#ffd34d':'#7af0ff'});});
@@ -745,7 +765,7 @@ function weaponBolt(dt){
 function weaponNova(dt){
   const lv=player.weapons.nova; if(!lv) return;
   const s=WEAPONS.nova.get(lv); if(player.ev.nova){ s.radius*=1.5; s.dmg*=1.7; s.rate*=0.85; } player.novaT-=dt;
-  if(player.novaT<=0){ player.novaT=s.rate;
+  if(player.novaT<=0){ player.novaT=cooldown(s.rate);
     burst(player.x,player.y,'#b14bff',26,s.radius*2.4,.5);
     particles.push({ring:true,vx:0,vy:0,x:player.x,y:player.y,r:10,max:s.radius,life:.4,maxl:.4,color:'#b14bff'});
     enemies.forEach(e=>{ if(dist2(e.x,e.y,player.x,player.y)<s.radius*s.radius){
@@ -759,7 +779,7 @@ function weaponBeam(dt){
   const s=WEAPONS.beam.get(lv); if(player.ev.beam){ s.dmg*=1.6; s.width*=1.5; s.len+=140; } player.beamT-=dt;
   if(player.beamT<=0){
     const ts=nearestEnemies(player.ev.beam?2:1); if(!ts.length){player.beamT=0.2;return;}
-    player.beamT=s.rate;
+    player.beamT=cooldown(s.rate);
     ts.forEach(t=>{ const a=Math.atan2(t.y-player.y,t.x-player.x);
       const ex=player.x+Math.cos(a)*s.len, ey=player.y+Math.sin(a)*s.len;
       enemies.forEach(e=>{ if(pointSegDist(e.x,e.y,player.x,player.y,ex,ey)<e.r+s.width){
@@ -781,10 +801,12 @@ function weaponOrbit(dt){
 
 function weaponChain(dt){
   const lv=player.weapons.chain; if(!lv) return;
-  const s=WEAPONS.chain.get(lv); player.chainT-=dt;
+  const s=WEAPONS.chain.get(lv);
+  if(player.ev.chain){ s.dmg*=1.55; s.jumps+=3; s.range+=55; s.rate*=0.82; }
+  player.chainT-=dt;
   if(player.chainT>0) return;
   const first=nearestEnemies(1)[0]; if(!first){ player.chainT=0.15; return; }
-  player.chainT=s.rate;
+  player.chainT=cooldown(s.rate);
   let cur=first, px=player.x, py=player.y; const hitSet=new Set();
   for(let j=0;j<=s.jumps && cur;j++){
     hitEnemy(cur, s.dmg*player.dmgMul, 0,0); hitSet.add(cur);
@@ -796,6 +818,41 @@ function weaponChain(dt){
   }
   AudioFX.shoot();
 }
+function weaponGrenade(dt){
+  const lv=player.weapons.grenade; if(!lv) return;
+  const s=WEAPONS.grenade.get(lv);
+  if(player.ev.grenade){ s.count+=1; s.dmg*=1.55; s.radius*=1.45; s.rate*=0.84; }
+  player.grenadeT-=dt;
+  if(player.grenadeT>0) return;
+  const targets=clusterTargets(s.count); if(!targets.length){ player.grenadeT=0.25; return; }
+  player.grenadeT=cooldown(s.rate);
+  targets.forEach(t=>{
+    const a=Math.atan2(t.y-player.y,t.x-player.x);
+    projectiles.push({x:player.x,y:player.y,vx:Math.cos(a)*s.speed,vy:Math.sin(a)*s.speed,
+      r:8,dmg:s.dmg*player.dmgMul,life:1.25,pierce:0,color:player.ev.grenade?'#ffd34d':'#ff7a1a',
+      explode:true,boomR:s.radius,boomDmg:s.dmg*player.dmgMul});
+  });
+  AudioFX.shoot();
+}
+function cooldown(rate){ return rate*(player.coolMul||1); }
+function clusterTargets(n){
+  return enemies.map(a=>{
+    let crowd=0;
+    for(const e of enemies) if(dist2(a.x,a.y,e.x,e.y)<110*110) crowd++;
+    return {e:a,crowd,near:dist2(a.x,a.y,player.x,player.y)};
+  }).sort((a,b)=>b.crowd-a.crowd || a.near-b.near).slice(0,n).map(x=>x.e);
+}
+function explodeProjectile(p,i){
+  burst(p.x,p.y,p.color||'#ff9a3b',22,(p.boomR||80)*2.1,.45);
+  particles.push({ring:true,vx:0,vy:0,x:p.x,y:p.y,r:10,max:p.boomR||80,life:.32,maxl:.32,color:p.color||'#ff9a3b'});
+  for(const e of enemies){
+    if(dist2(e.x,e.y,p.x,p.y)<((p.boomR||80)+e.r)**2){
+      hitEnemy(e,p.boomDmg||p.dmg, e.x-p.x, e.y-p.y);
+    }
+  }
+  shake=Math.max(shake,4);
+  projectiles.splice(i,1);
+}
 function nearestEnemies(n){
   return enemies.slice().sort((a,b)=>dist2(a.x,a.y,player.x,player.y)-dist2(b.x,b.y,player.x,player.y)).slice(0,n);
 }
@@ -805,8 +862,12 @@ function pointSegDist(px,py,x1,y1,x2,y2){
   return Math.hypot(px-(x1+t*dx),py-(y1+t*dy));
 }
 function hitEnemy(e,dmg,nx,ny){
+  let crit=false;
+  if((player.crit||0)>0 && Math.random()<Math.min(0.48,player.crit)){
+    dmg*=1.75; crit=true;
+  }
   e.hp-=dmg; e.hit=0.08;   // no knockback — enemies hold their ground
-  addText(e.x,e.y-e.r,Math.round(dmg),'#fff',12);
+  addText(e.x,e.y-e.r,(crit?'CRIT ':'')+Math.round(dmg),crit?'#ffd34d':'#fff',crit?14:12);
   AudioFX.hit();
 }
 function killEnemy(e,i){
@@ -823,6 +884,10 @@ function killEnemy(e,i){
     runGold+=1;
     addText(e.x,e.y-e.r,'ELITE! +1💰','#ffd34d',16);
   } else spawnGem(e.x,e.y,e.xp);
+  if(!e.elite && (player.luck||0)>0 && Math.random()<Math.min(0.16,0.012*player.luck)){
+    runGold+=1;
+    addText(e.x,e.y-e.r-14,'+1💰','#ffd34d',13);
+  }
   AudioFX.kill();
 }
 function onBossDefeated(e){
@@ -842,7 +907,8 @@ function onBossDefeated(e){
   gainXP(e.xp);   // may trigger a level-up choice
 }
 function damagePlayer(d){
-  player.hp-=d; player.invuln=0.6; AudioFX.hurt(); vibrate(45);
+  const finalDmg=Math.max(1,d*Math.max(0.46,1-(player.dr||0)));
+  player.hp-=finalDmg; player.invuln=0.6; AudioFX.hurt(); vibrate(45);
   shake=Math.max(shake,7);
   const f=$('dmgFlash'); f.classList.remove('flash'); void f.offsetWidth; f.classList.add('flash');
   if(player.hp<=0){ player.hp=0; gameOver(); }
@@ -910,7 +976,12 @@ function applyPick(p){
   else { const k=p.key; player.passives[k]=(player.passives[k]||0)+1;
     if(k==='spd'){ player.spdMul+=0.12; }
     else if(k==='magnet'){ player.magnet+=90; }
-    else if(k==='power'){ player.dmgMul+=0.15; } }
+    else if(k==='power'){ player.dmgMul+=0.15; }
+    else if(k==='haste'){ player.coolMul=Math.max(0.58,player.coolMul*0.92); }
+    else if(k==='guard'){ player.dr=Math.min(0.54,(player.dr||0)+0.09); }
+    else if(k==='crit'){ player.crit=Math.min(0.48,(player.crit||0)+0.08); }
+    else if(k==='wisdom'){ player.xpMul+=0.12; }
+    else if(k==='luck'){ player.luck+=1; } }
   $('lvOverlay').style.display='none';
   pendingLevels--;
   if(pendingLevels>0){ openLevelUp(); }          // chain remaining level-ups
@@ -1472,6 +1543,10 @@ function metaBonus(k,lv){
   if(k==='xp') return '+경험치 '+(10*lv)+'%';
   if(k==='magnet') return '+자력 '+(45*lv);
   if(k==='gold') return '+골드 '+(12*lv)+'%';
+  if(k==='armor') return '-받는 피해 '+(4*lv)+'%';
+  if(k==='haste') return '-대기시간 '+(4*lv)+'%';
+  if(k==='crit') return '+치명타 '+(3*lv)+'%';
+  if(k==='luck') return '+행운 '+(lv*0.5).toFixed(1);
   return '';
 }
 function metaSummaryHTML(){
@@ -1533,7 +1608,7 @@ function loop(now){
 player=newPlayer(); enemies=[];projectiles=[];gems=[];particles=[];texts=[];orbs=[];
 requestAnimationFrame(loop);
 })();
-/* build:v20260703-version-label */
+/* build:v20260703-upgrade-rebalance */
 </script>
 <script>
 // Offline install (PWA): only over http/https, never on file://

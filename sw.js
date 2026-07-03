@@ -1,5 +1,5 @@
 ﻿/* NEON SURVIVORS service worker - caches the app shell for offline play */
-const CACHE = 'neon-survivors-v20260703-version-label';
+const CACHE = 'neon-survivors-v20260703-upgrade-rebalance';
 const ASSETS = [
   './',
   './index.html',
