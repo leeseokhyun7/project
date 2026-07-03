@@ -36,10 +36,9 @@
 
   /* ---------- HUD ---------- */
   #hud{position:absolute;inset:0;pointer-events:none;font-variant-numeric:tabular-nums;}
-  .topbar{position:absolute;top:0;left:50%;width:min(760px,calc(100vw - 24px));
-    transform:translateX(-50%);padding:max(10px,env(safe-area-inset-top)) 0 0;
-    display:flex;flex-direction:column;gap:8px;}
-  .topbar:before{content:"";position:absolute;inset:6px -8px -8px;border-radius:18px;
+  .topbar{position:absolute;left:14px;bottom:calc(18px + env(safe-area-inset-bottom));
+    width:min(330px,calc(58vw - 12px));display:flex;flex-direction:column;gap:8px;}
+  .topbar:before{content:"";position:absolute;inset:-8px;border-radius:16px;
     background:linear-gradient(180deg,rgba(5,12,12,.58),rgba(5,12,12,.22));
     border:1px solid rgba(255,255,255,.06);box-shadow:0 10px 36px rgba(0,0,0,.18);
     backdrop-filter:blur(10px);z-index:-1;}
@@ -51,19 +50,17 @@
     background:linear-gradient(90deg,var(--xp),#7af0ff);
     box-shadow:0 0 14px var(--xp);transition:width .12s linear, filter .1s ease;}
   #xpbar.gain{filter:brightness(1.75) saturate(1.3);box-shadow:0 0 22px var(--xp);}
-  .toprow{display:grid;grid-template-columns:minmax(84px,1fr) auto minmax(84px,1fr);
-    align-items:center;gap:10px;font-weight:800;}
+  .toprow{display:grid;grid-template-columns:1fr 1fr 1fr;align-items:stretch;gap:7px;font-weight:800;}
   .chip{display:flex;align-items:center;gap:7px;padding:7px 12px;border-radius:12px;
     background:linear-gradient(180deg,rgba(18,30,30,.78),rgba(9,16,16,.62));
     backdrop-filter:blur(12px);border:1px solid rgba(215,245,235,.16);
     box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 8px 22px rgba(0,0,0,.18);
     font-size:14px;letter-spacing:.3px;}
-  .chip:first-child{justify-self:start;}
-  .chip:last-child{justify-self:end;}
+  .chip:first-child,.chip:last-child{justify-self:stretch;justify-content:center;}
   .lvl{color:var(--neon);text-shadow:0 0 10px var(--neon);}
-  .timer{font-size:20px;letter-spacing:2px;color:#fff;text-shadow:0 0 12px rgba(255,255,255,.4);}
+  .roundhint{font-size:10px;letter-spacing:1.2px;color:#d7e6ff;text-shadow:0 0 8px rgba(255,255,255,.28);margin-top:2px;}
   .kills{color:var(--neon2);text-shadow:0 0 10px var(--neon2);}
-  .centercol{display:flex;flex-direction:column;align-items:center;gap:0;padding:4px 18px;border-radius:14px;
+  .centercol{display:flex;flex-direction:column;align-items:center;gap:0;padding:4px 8px;border-radius:14px;
     background:linear-gradient(180deg,rgba(255,255,255,.09),rgba(0,0,0,.18));
     border:1px solid rgba(255,255,255,.12);}
   .roundlbl{font-size:11px;letter-spacing:2.6px;font-weight:900;color:#e2d1ff;text-shadow:0 0 10px rgba(183,140,255,.55);}
@@ -78,15 +75,15 @@
   #banner.reward .bn-sub{color:#ffe9a8;}
   @keyframes bannerPop{0%{opacity:0;transform:scale(.6)}12%{opacity:1;transform:scale(1.06)}
     26%{transform:scale(1)}78%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.12)}}
-  .hpwrap{position:absolute;left:14px;right:14px;bottom:calc(14px + env(safe-area-inset-bottom));
+  .hpwrap{position:absolute;right:14px;left:auto;bottom:calc(18px + env(safe-area-inset-bottom));
     height:15px;border-radius:99px;background:rgba(8,12,14,.58);
-    border:1px solid rgba(255,210,220,.18);overflow:hidden;max-width:520px;margin:0 auto;
+    border:1px solid rgba(255,210,220,.18);overflow:hidden;width:min(330px,calc(38vw - 10px));max-width:360px;margin:0;
     box-shadow:0 10px 32px rgba(0,0,0,.28),inset 0 0 10px rgba(0,0,0,.42);}
   #hpbar{height:100%;width:100%;border-radius:99px;
     background:linear-gradient(90deg,#ff3b6b,#ff8a5c);box-shadow:0 0 14px var(--hp);
     transition:width .15s ease;}
-  .hptext{position:absolute;left:14px;right:14px;bottom:calc(31px + env(safe-area-inset-bottom));
-    text-align:center;font-size:11px;letter-spacing:1.8px;color:#ffd1da;font-weight:900;max-width:520px;margin:0 auto;
+  .hptext{position:absolute;right:14px;left:auto;bottom:calc(36px + env(safe-area-inset-bottom));
+    text-align:center;font-size:11px;letter-spacing:1.8px;color:#ffd1da;font-weight:900;width:min(330px,calc(38vw - 10px));max-width:360px;margin:0;
     text-shadow:0 2px 5px rgba(0,0,0,.55);}
 
   /* ---------- Joystick ---------- */
@@ -206,6 +203,14 @@
     .card .ctext p{min-height:40px;}
     .card .lvl-dots{justify-content:center;}
   }
+  @media (max-width:560px){
+    .topbar{left:12px;bottom:calc(58px + env(safe-area-inset-bottom));width:calc(100vw - 24px);}
+    .hptext{left:12px;right:12px;bottom:calc(33px + env(safe-area-inset-bottom));width:auto;max-width:none;}
+    .hpwrap{left:12px;right:12px;bottom:calc(14px + env(safe-area-inset-bottom));width:auto;max-width:none;}
+    .toprow{grid-template-columns:1fr 1fr 1fr;}
+    .centercol{padding:4px 8px;}
+    .chip{justify-content:center;padding:7px 8px;font-size:13px;}
+  }
 </style>
 </head>
 <body>
@@ -221,7 +226,7 @@
         <div class="chip lvl">LV <span id="lvlNum">1</span></div>
         <div class="centercol">
           <div class="roundlbl">ROUND <span id="roundNum">1</span></div>
-          <div class="timer" id="timer">00:00</div>
+          <div class="roundhint" id="roundHint">전투 준비</div>
         </div>
         <div class="chip kills">☠ 처치 <span id="killNum">0</span></div>
       </div>
@@ -302,10 +307,10 @@
         -webkit-background-clip:text;background-clip:text;color:transparent;">GAME OVER</div>
       <div class="sub" id="overSub">당신은 쓰러졌습니다</div>
       <div style="margin-top:18px;text-align:left">
-        <div class="stat"><span>⏱ 생존 시간</span><span id="sTime">00:00</span></div>
+        <div class="stat"><span>🚩 최종 라운드</span><span id="sRound">ROUND 1</span></div>
         <div class="stat"><span>☠ 처치 수</span><span id="sKills">0</span></div>
         <div class="stat"><span>⭐ 도달 레벨</span><span id="sLvl">1</span></div>
-        <div class="stat"><span>🏆 최고 기록</span><span id="sBest">00:00</span></div>
+        <div class="stat"><span>🏆 최고 라운드</span><span id="sBest">ROUND 1</span></div>
         <div class="stat"><span>💰 획득 골드</span><span id="sGold">0</span></div>
       </div>
       <div class="meta-summary" id="overMetaSummary"><b>영구 강화</b> 없음</div>
@@ -430,7 +435,6 @@ const PASSIVES={
   spd:{name:'가속 부츠',icon:'👟',desc:'이동 속도 +12%',max:5},
   magnet:{name:'자력장',icon:'🧲',desc:'젬을 더 빠르고 넓게 끌어옵니다 (+90)',max:5},
   power:{name:'증폭기',icon:'🔥',desc:'모든 피해 +15%',max:6},
-  regen:{name:'재생 모듈',icon:'➕',desc:'초당 체력 재생 +0.8',max:5},
 };
 // weapon evolutions: max the weapon + own its paired passive -> evolve
 const EVO={
@@ -458,7 +462,7 @@ function newPlayer(){
   const p={ x:0,y:0,r:16, baseSpeed:200, hp:100, maxhp:100,
     xp:0, level:1, next:5, kills:0, xpMul:1,
     weapons:{bolt:1}, passives:{}, ev:{},
-    dmgMul:1, spdMul:1, magnet:0, regen:0, invuln:0,
+    dmgMul:1, spdMul:1, magnet:0, invuln:0,
     boltT:0, novaT:0, beamT:0, chainT:0, orbAngle:0, face:{x:1,y:0}, dir:1, moving:false, walkPhase:0 };
   // apply permanent meta upgrades
   const u=META.up||{};
@@ -584,8 +588,6 @@ function update(dt){
   // keep the hero inside the bounded map
   player.x=clamp(player.x,-MAP+player.r,MAP-player.r);
   player.y=clamp(player.y,-MAP+player.r,MAP-player.r);
-  // regen
-  if(player.regen>0 && player.hp<player.maxhp){ player.hp=Math.min(player.maxhp,player.hp+player.regen*dt); }
 
   // camera (follows player, clamped so we never scroll past the map edge)
   cam.x+=(player.x-cam.x)*Math.min(1,dt*8);
@@ -790,9 +792,9 @@ function killEnemy(e,i){
   if(e.type==='splitter'){ for(let k=0;k<2;k++){ const a=rand(0,TAU); const hp=8+difficulty*3;
     enemies.push({type:'grunt',r:9,hp:hp,maxhp:hp,spd:rand(80,110),dmg:6,xp:1,color:'#7ef0c0',
       x:e.x+Math.cos(a)*14,y:e.y+Math.sin(a)*14,hit:0,kb:{x:0,y:0},phase:rand(0,TAU)}); } }
-  if(e.elite){ // guaranteed loot + gold + small heal
+  if(e.elite){ // guaranteed loot + gold (no healing)
     for(let k=0;k<6;k++) spawnGem(e.x+rand(-34,34), e.y+rand(-34,34), 3);
-    runGold+=5; player.hp=Math.min(player.maxhp, player.hp+player.maxhp*0.1);
+    runGold+=5;
     addText(e.x,e.y-e.r,'ELITE! +5💰','#ffd34d',16);
   } else spawnGem(e.x,e.y,e.xp);
   AudioFX.kill();
@@ -800,13 +802,12 @@ function killEnemy(e,i){
 function onBossDefeated(e){
   bossActive=false; shake=16;
   const rnd=e.round||round;
-  // reward scaled to round: partial heal + gem shower + big XP
-  player.hp=Math.min(player.maxhp, player.hp + player.maxhp*0.4);
+  // reward scaled to round: gem shower + big XP (no healing)
   const gemCount=10+rnd*2;
   for(let k=0;k<gemCount;k++) spawnGem(e.x+rand(-20,20), e.y+rand(-20,20), 3);
   burst(e.x,e.y,'#ffd34d',50,360,.8);
   addText(e.x,e.y-e.r,(e.name||'BOSS')+' 격파! +'+e.xp+' XP','#ffd34d',18);
-  showBanner('ROUND '+rnd+' 클리어!','보상 획득 · 다음 라운드 준비','reward');
+  showBanner('ROUND '+rnd+' 클리어!','다음 라운드 준비','reward');
   AudioFX.levelup();
   runGold+=10+rnd*4;
   // advance to next round
@@ -880,8 +881,7 @@ function applyPick(p){
     if(k==='hp'){ player.maxhp+=25; player.hp+=25; }
     else if(k==='spd'){ player.spdMul+=0.12; }
     else if(k==='magnet'){ player.magnet+=90; }
-    else if(k==='power'){ player.dmgMul+=0.15; }
-    else if(k==='regen'){ player.regen+=0.8; } }
+    else if(k==='power'){ player.dmgMul+=0.15; } }
   $('lvOverlay').style.display='none';
   pendingLevels--;
   if(pendingLevels>0){ openLevelUp(); }          // chain remaining level-ups
@@ -1389,7 +1389,8 @@ function updateHUD(){
   $('lvlNum').textContent=player.level;
   $('killNum').textContent=killCount;
   $('roundNum').textContent=round;
-  $('timer').textContent=fmt(time);
+  const rh=$('roundHint');
+  if(rh) rh.textContent = phase==='warn' ? '보스 접근 중' : phase==='boss' ? '보스 교전' : '웨이브 진행';
   $('xpbar').style.width=(player.xp/player.next*100)+'%';
   $('xpText').textContent=Math.floor(player.xp)+' / '+player.next;
   const hpp=clamp(player.hp/player.maxhp,0,1)*100;
@@ -1406,14 +1407,14 @@ function startGame(){
 }
 function gameOver(){
   state='over'; clearInput(); AudioFX.over(); vibrate([40,60,120]);
-  const best=Math.max(+(localStorage.getItem('ns_best')||0), time);
-  localStorage.setItem('ns_best',best);
-  const earned=Math.floor((round*15 + killCount + time)*goldMul()) + runGold;
+  const best=Math.max(+(localStorage.getItem('ns_best_round')||0), round);
+  localStorage.setItem('ns_best_round',best);
+  const earned=Math.floor((round*28 + killCount*1.2)*goldMul()) + runGold;
   META.gold += earned; saveMeta();
-  $('sTime').textContent=fmt(time);
+  $('sRound').textContent='ROUND '+round;
   $('sKills').textContent=killCount;
   $('sLvl').textContent=player.level;
-  $('sBest').textContent=fmt(best);
+  $('sBest').textContent='ROUND '+best;
   const sg=$('sGold'); if(sg) sg.textContent='+'+earned+'  (보유 '+META.gold+')';
   $('pauseBtn').style.display='none'; $('soundBtn').style.display='none'; $('musicBtn').style.display='none';
   AudioFX.stopMusic();
@@ -1504,7 +1505,7 @@ function loop(now){
 player=newPlayer(); enemies=[];projectiles=[];gems=[];particles=[];texts=[];orbs=[];
 requestAnimationFrame(loop);
 })();
-/* build:v20260703-premium-ui */
+/* build:v20260703-no-auto-heal */
 </script>
 <script>
 // Offline install (PWA): only over http/https, never on file://
