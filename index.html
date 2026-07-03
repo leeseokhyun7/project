@@ -192,6 +192,9 @@
   .feats{margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
   .feat{font-size:11px;letter-spacing:.8px;padding:6px 10px;border-radius:9px;
     background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.10);color:#d5e5f2;}
+  .app-version{position:absolute;left:12px;right:12px;bottom:max(10px,env(safe-area-inset-bottom));
+    text-align:center;font-size:11px;font-weight:800;letter-spacing:1.2px;color:rgba(220,238,255,.72);
+    text-shadow:0 2px 8px rgba(0,0,0,.65);pointer-events:none;}
   /* Big 3-across level-up cards on wider screens */
   @media (min-width:640px){
     .cards{flex-direction:row;width:min(800px,95vw);gap:16px;align-items:stretch;}
@@ -277,6 +280,7 @@
       <div class="btn" id="startBtn">게임 시작 ▶</div>
       <div class="btn ghost" id="shopBtn" style="margin-top:12px">🛒 영구 강화 상점 · 💰 <span id="goldBal">0</span></div>
     </div>
+    <div class="app-version">현재 버전 <span id="versionText">v20260703-version-label</span></div>
   </div>
 
   <!-- Shop -->
@@ -353,6 +357,8 @@ const rand=(a,b)=>a+Math.random()*(b-a);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v;
 const dist2=(x1,y1,x2,y2)=>{const dx=x1-x2,dy=y1-y2;return dx*dx+dy*dy;};
 const TAU=Math.PI*2;
+const APP_VERSION='v20260703-version-label';
+$('versionText').textContent=APP_VERSION;
 
 // ============================================================ audio (WebAudio, no assets)
 const AudioFX=(()=>{
@@ -1527,7 +1533,7 @@ function loop(now){
 player=newPlayer(); enemies=[];projectiles=[];gems=[];particles=[];texts=[];orbs=[];
 requestAnimationFrame(loop);
 })();
-/* build:v20260703-balance-pass */
+/* build:v20260703-version-label */
 </script>
 <script>
 // Offline install (PWA): only over http/https, never on file://
