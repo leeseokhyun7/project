@@ -204,12 +204,24 @@
     .card .lvl-dots{justify-content:center;}
   }
   @media (max-width:560px){
-    .topbar{left:12px;bottom:calc(58px + env(safe-area-inset-bottom));width:calc(100vw - 24px);}
-    .hptext{left:12px;right:12px;bottom:calc(33px + env(safe-area-inset-bottom));width:auto;max-width:none;}
-    .hpwrap{left:12px;right:12px;bottom:calc(14px + env(safe-area-inset-bottom));width:auto;max-width:none;}
-    .toprow{grid-template-columns:1fr 1fr 1fr;}
-    .centercol{padding:4px 8px;}
-    .chip{justify-content:center;padding:7px 8px;font-size:13px;}
+    .topbar{left:10px;bottom:calc(14px + env(safe-area-inset-bottom));width:calc(100vw - 184px);min-width:162px;max-width:230px;gap:6px;}
+    .topbar:before{inset:-7px;border-radius:14px;}
+    .toprow{grid-template-columns:1fr 1fr;gap:6px;}
+    .centercol{padding:4px 6px;}
+    .roundhint{display:none;}
+    .roundlbl{font-size:10px;letter-spacing:1.6px;}
+    .chip{justify-content:center;padding:6px 7px;font-size:12px;gap:4px;letter-spacing:0;}
+    .kills{grid-column:1 / -1;}
+    .xplabel{justify-content:flex-start;font-size:9px;letter-spacing:1px;padding-left:2px;}
+    .xpwrap{height:9px;}
+    .hptext{left:auto;right:10px;bottom:calc(36px + env(safe-area-inset-bottom));width:154px;max-width:42vw;font-size:10px;letter-spacing:.8px;text-align:center;white-space:nowrap;}
+    .hpwrap{left:auto;right:10px;bottom:calc(17px + env(safe-area-inset-bottom));width:154px;max-width:42vw;height:14px;}
+  }
+  @media (max-width:340px){
+    .topbar{min-width:150px;width:calc(100vw - 170px);}
+    .chip{font-size:11px;padding:5px 5px;}
+    .roundlbl{font-size:9px;}
+    .hptext,.hpwrap{width:136px;max-width:40vw;}
   }
 </style>
 </head>
@@ -233,7 +245,7 @@
       <div class="xplabel">⭐ EXP (경험치) <span id="xpText">0 / 5</span></div>
       <div class="xpwrap"><div id="xpbar"></div></div>
     </div>
-    <div class="hptext">❤️ 체력(HP) <span id="hpText">100 / 100</span></div>
+    <div class="hptext">❤️ HP <span id="hpText">100 / 100</span></div>
     <div class="hpwrap"><div id="hpbar"></div></div>
     <div id="banner"><div class="bn-main"></div><div class="bn-sub"></div></div>
   </div>
@@ -316,7 +328,7 @@
       <div class="meta-summary" id="overMetaSummary"><b>영구 강화</b> 없음</div>
       <div class="over-actions">
         <div class="btn ghost" id="overShopBtn">🛒 영구 강화 상점</div>
-        <div class="btn" id="retryBtn">강화 없이 바로 다시 도전 ↻</div>
+        <div class="btn" id="retryBtn">다시 도전 ↻</div>
       </div>
     </div>
   </div>
@@ -345,6 +357,7 @@ const TAU=Math.PI*2;
 // ============================================================ audio (WebAudio, no assets)
 const AudioFX=(()=>{
   let ac=null, master=null, muted=false;
+  let lastShot=0;
   function ensure(){ if(!ac){ac=new (window.AudioContext||window.webkitAudioContext)();
     master=ac.createGain(); master.gain.value=.18; master.connect(ac.destination);}
     if(ac.state==='suspended') ac.resume();}
@@ -378,9 +391,16 @@ const AudioFX=(()=>{
   }
   function startMusic(){ if(musTimer) return; ensure(); mstep=0; musTimer=setInterval(musicTick,270); }
   function stopMusic(){ if(musTimer){ clearInterval(musTimer); musTimer=null; } }
+  function softShot(){
+    if(muted) return; ensure();
+    if(ac.currentTime-lastShot<0.09) return;
+    lastShot=ac.currentTime;
+    const f=430+Math.random()*90;
+    beep(f,.035,'sine',.10,-45-Math.random()*35);
+  }
   return{
     startMusic, stopMusic,
-    shoot:()=>beep(660,.06,'square',.5,-200),
+    shoot:softShot,
     hit:()=>beep(220,.05,'sawtooth',.4,-60),
     kill:()=>{beep(140,.09,'triangle',.5,-40);noise(.06,.25);},
     xp:()=>beep(880,.05,'sine',.45,180),
@@ -400,7 +420,7 @@ let cam={x:0,y:0};
 let time=0, killCount=0, spawnTimer=0, difficulty=0, bossActive=false;
 let round=1, phase='fight', roundTimer=0, warnT=0, pendingLevels=0, runGold=0;
 const ROUND_LEN=38, WARN_LEN=2.6;
-const MAP=1000;   // half-extent of the playfield (world spans -MAP..MAP)
+const MAP=800;   // half-extent of the playfield (world spans -MAP..MAP)
 const ROUND_THEMES=[
   {name:'초원',top:'#4a9d43',mid:'#3c8b39',bot:'#2f7530',sun:'rgba(240,255,180,0.20)',patchDark:'rgba(30,80,30,0.16)',patchLight:'rgba(150,210,120,0.12)',grassDark:'#2c7a2c',grassLight:'#5cb84a',fence:'#264e20',fenceLine:'#cdb45f',vign:'rgba(12,34,12,0.42)'},
   {name:'가을 들판',top:'#9b8a43',mid:'#7e6f2c',bot:'#5b5f28',sun:'rgba(255,205,120,0.20)',patchDark:'rgba(78,54,26,0.16)',patchLight:'rgba(214,170,80,0.12)',grassDark:'#6a5b22',grassLight:'#b68d32',fence:'#5a4225',fenceLine:'#e0b86a',vign:'rgba(48,34,14,0.44)'},
@@ -418,20 +438,17 @@ function themeForRound(r=round){ return ROUND_THEMES[(Math.max(1,r)-1)%ROUND_THE
 
 const WEAPONS={
   bolt:{name:'네온 볼트',icon:'🔫',desc:'가장 가까운 적에게 빠른 탄환 발사',max:6,
-        get:(l)=>({rate:0.7-0.05*l, dmg:12+5*l, count:1+Math.floor(l/2), speed:470, pierce:l>=4?1:0})},
+        get:(l)=>({rate:0.78-0.045*l, dmg:11+4*l, count:1+Math.floor((l+1)/3), speed:455, pierce:l>=5?1:0})},
   orbit:{name:'궤도 칼날',icon:'🌀',desc:'주변을 회전하는 칼날',max:6,
-        get:(l)=>({count:1+l, dmg:6+3*l, radius:60+8*l, speed:2.2+0.15*l})},
+        get:(l)=>({count:1+l, dmg:5+2.6*l, radius:58+7*l, speed:2.1+0.13*l})},
   nova:{name:'펄스 노바',icon:'💥',desc:'주기적으로 폭발하는 충격파',max:6,
-        get:(l)=>({rate:2.4-0.2*l, dmg:14+9*l, radius:90+22*l})},
+        get:(l)=>({rate:2.55-0.18*l, dmg:15+7*l, radius:88+18*l})},
   beam:{name:'레이저 휩',icon:'⚡',desc:'전방으로 관통 레이저 발사',max:6,
-        get:(l)=>({rate:1.4-0.13*l, dmg:10+7*l, len:260+30*l, width:14+3*l})},
-  aura:{name:'플라즈마 오라',icon:'☢️',desc:'주변 적을 지속적으로 태움',max:6,
-        get:(l)=>({radius:70+14*l, dps:9+6*l})},
+        get:(l)=>({rate:1.55-0.10*l, dmg:12+6*l, len:245+26*l, width:12+2.5*l})},
   chain:{name:'체인 라이트닝',icon:'🌩️',desc:'가까운 적을 감전, 주변으로 전이',max:6,
-        get:(l)=>({rate:1.7-0.16*l, dmg:14+8*l, jumps:2+l, range:170+15*l})},
+        get:(l)=>({rate:1.9-0.12*l, dmg:12+6*l, jumps:1+Math.floor(l/2), range:165+14*l})},
 };
 const PASSIVES={
-  hp:{name:'생명력 코어',icon:'❤️',desc:'최대 체력 +25, 즉시 회복',max:6},
   spd:{name:'가속 부츠',icon:'👟',desc:'이동 속도 +12%',max:5},
   magnet:{name:'자력장',icon:'🧲',desc:'젬을 더 빠르고 넓게 끌어옵니다 (+90)',max:5},
   power:{name:'증폭기',icon:'🔥',desc:'모든 피해 +15%',max:6},
@@ -440,17 +457,17 @@ const PASSIVES={
 const EVO={
   bolt:{req:'power', name:'플라즈마 볼트', icon:'🔫', desc:'관통 무한 · 탄환 대폭 증가 · 피해 급증'},
   orbit:{req:'spd',  name:'블레이드 스톰', icon:'🌀', desc:'칼날 폭증 · 광역/피해 강화'},
-  nova:{req:'hp',    name:'슈퍼노바',     icon:'💥', desc:'초대형 폭발 · 피해 급증'},
+  nova:{req:'power', name:'슈퍼노바',     icon:'💥', desc:'초대형 폭발 · 피해 급증'},
   beam:{req:'magnet',name:'프리즘 레이저', icon:'⚡', desc:'2연발 · 관통/피해 강화'},
 };
 // permanent meta upgrades (persist across runs)
 const META_DEFS={
-  hp:    {name:'강철 심장', icon:'❤️', desc:'시작 최대 체력 +20', max:8, cost:l=>40+l*35},
-  dmg:   {name:'예리함',   icon:'🗡️', desc:'모든 피해 +8%',     max:8, cost:l=>50+l*40},
-  spd:   {name:'날렵함',   icon:'👟', desc:'이동 속도 +5%',      max:6, cost:l=>50+l*35},
-  xp:    {name:'현자의 눈', icon:'⭐', desc:'경험치 획득 +10%',   max:6, cost:l=>60+l*45},
-  magnet:{name:'수집가',   icon:'🧲', desc:'시작 자력 +45',      max:5, cost:l=>50+l*35},
-  gold:  {name:'황금손',   icon:'💰', desc:'골드 획득 +12%',     max:6, cost:l=>70+l*50},
+  hp:    {name:'강철 심장', icon:'❤️', desc:'시작 최대 체력 +20', max:8, cost:l=>160+l*140},
+  dmg:   {name:'예리함',   icon:'🗡️', desc:'모든 피해 +8%',     max:8, cost:l=>220+l*180},
+  spd:   {name:'날렵함',   icon:'👟', desc:'이동 속도 +5%',      max:6, cost:l=>170+l*150},
+  xp:    {name:'현자의 눈', icon:'⭐', desc:'경험치 획득 +10%',   max:6, cost:l=>230+l*190},
+  magnet:{name:'수집가',   icon:'🧲', desc:'시작 자력 +45',      max:5, cost:l=>180+l*160},
+  gold:  {name:'황금손',   icon:'💰', desc:'골드 획득 +12%',     max:6, cost:l=>300+l*240},
 };
 let META={gold:0, up:{}};
 function loadMeta(){ try{ META=JSON.parse(localStorage.getItem('ns_meta'))||{gold:0,up:{}}; }catch(e){ META={gold:0,up:{}}; }
@@ -459,7 +476,7 @@ function saveMeta(){ try{ localStorage.setItem('ns_meta', JSON.stringify(META));
 function goldMul(){ return 1 + 0.12*(META.up.gold||0); }
 
 function newPlayer(){
-  const p={ x:0,y:0,r:16, baseSpeed:200, hp:100, maxhp:100,
+  const p={ x:0,y:0,r:16, baseSpeed:218, hp:100, maxhp:100,
     xp:0, level:1, next:5, kills:0, xpMul:1,
     weapons:{bolt:1}, passives:{}, ev:{},
     dmgMul:1, spdMul:1, magnet:0, invuln:0,
@@ -526,14 +543,14 @@ const BOSS_SKINS=['#ff2bd6','#b14bff','#ff5d3b','#39e6a8','#ffd34d','#00f0ff'];
 const BOSS_NAMES=['혈귀 군주','보이드 마수','겁화의 화신','맹독 여왕','황금 폭군','심연의 지배자'];
 function spawnBoss(rnd){
   const ang=rand(0,TAU), d=Math.max(W,H)*0.6;
-  const hp=300+rnd*400;   // beatable with early firepower so rounds actually end
+  const hp=Math.round(950*Math.pow(1.42,rnd-1)+rnd*520);
   const idx=(rnd-1)%BOSS_SKINS.length;
   const br=44+Math.min(rnd*2,26);
   const bx=clamp(player.x+Math.cos(ang)*d,-MAP+br,MAP-br);
   const by=clamp(player.y+Math.sin(ang)*d,-MAP+br,MAP-br);
   enemies.push({type:'boss',x:bx,y:by,
-    r:br, hp, maxhp:hp, spd:42+rnd*1.6, dmg:24+rnd*4, xp:60+rnd*30,
-    color:BOSS_SKINS[idx], name:BOSS_NAMES[idx], hit:0, kb:{x:0,y:0}, shootT:1.4, boss:true, phase:0, round:rnd});
+    r:br, hp, maxhp:hp, spd:46+rnd*3.4, dmg:26+rnd*8, xp:60+rnd*30,
+    color:BOSS_SKINS[idx], name:BOSS_NAMES[idx], hit:0, kb:{x:0,y:0}, shootT:0.9, boss:true, phase:0, round:rnd});
   bossActive=true; AudioFX.boss(); vibrate([90,50,90]); shake=14;
   addText(player.x,player.y-70,'⚠ '+BOSS_NAMES[idx]+' 출현','#fff',22);
 }
@@ -549,7 +566,7 @@ const stick=$('stick'), knob=stick.querySelector('.knob');
 let touchId=null, stBase={x:0,y:0}, joy={x:0,y:0};
 function startTouch(x,y){ stBase.x=x;stBase.y=y; stick.style.left=(x-60)+'px';stick.style.top=(y-60)+'px';
   stick.style.display='block'; knob.style.left='33px';knob.style.top='33px'; }
-function moveTouch(x,y){ let dx=x-stBase.x,dy=y-stBase.y; const m=Math.hypot(dx,dy),max=44;
+function moveTouch(x,y){ let dx=x-stBase.x,dy=y-stBase.y; const m=Math.hypot(dx,dy),max=50;
   if(m>max){dx=dx/m*max;dy=dy/m*max;} knob.style.left=(33+dx)+'px';knob.style.top=(33+dy)+'px';
   joy.x=dx/max; joy.y=dy/max; }
 function endTouch(){ stick.style.display='none'; joy.x=0;joy.y=0; touchId=null; }
@@ -576,7 +593,7 @@ function update(dt){
   if(keys['a']||keys['arrowleft'])mx-=1; if(keys['d']||keys['arrowright'])mx+=1;
   mx+=joy.x; my+=joy.y;
   const ml=Math.hypot(mx,my);
-  player.moving=ml>0.05;
+  player.moving=ml>0.04;
   let nmx=0,nmy=0;
   if(player.moving){ nmx=mx/Math.max(1,ml); nmy=my/Math.max(1,ml);
     const sp=player.baseSpeed*player.spdMul;
@@ -590,8 +607,8 @@ function update(dt){
   player.y=clamp(player.y,-MAP+player.r,MAP-player.r);
 
   // camera (follows player, clamped so we never scroll past the map edge)
-  cam.x+=(player.x-cam.x)*Math.min(1,dt*8);
-  cam.y+=(player.y-cam.y)*Math.min(1,dt*8);
+  cam.x+=(player.x-cam.x)*Math.min(1,dt*10);
+  cam.y+=(player.y-cam.y)*Math.min(1,dt*10);
   const cbx=Math.max(0,MAP-W/2), cby=Math.max(0,MAP-H/2);
   cam.x=clamp(cam.x,-cbx,cbx); cam.y=clamp(cam.y,-cby,cby);
 
@@ -615,7 +632,7 @@ function update(dt){
   // phase 'boss' ends when the boss is defeated (see onBossDefeated)
 
   // ---- weapons ----
-  weaponBolt(dt); weaponNova(dt); weaponBeam(dt); weaponOrbit(dt); weaponAura(dt); weaponChain(dt);
+  weaponBolt(dt); weaponNova(dt); weaponBeam(dt); weaponOrbit(dt); weaponChain(dt);
 
   // ---- enemies ----
   for(let i=enemies.length-1;i>=0;i--){
@@ -634,12 +651,21 @@ function update(dt){
     e.hit=Math.max(0,e.hit-dt);
     // separation (cheap)
     // shooter logic
-    if(e.type==='shooter'||e.boss){ e.shootT-=dt;
-      if(e.shootT<=0){ e.shootT=e.boss?1.1:rand(1.8,2.8);
-        const n=e.boss?8:1;
-        for(let k=0;k<n;k++){ const a=Math.atan2(dy,dx)+(e.boss?k/n*TAU:0);
-          projectiles.push({foe:true,x:e.x,y:e.y,vx:Math.cos(a)*180,vy:Math.sin(a)*180,
-            r:e.boss?8:6,dmg:e.dmg,life:4,color:e.boss?'#ff3b6b':'#ff8a3b'});}}}
+    if(e.type==='shooter'||e.boss){ e.shootT-=dt; if(e.boss) e.phase+=dt*(0.7+(e.round||1)*0.04);
+      if(e.shootT<=0){ e.shootT=e.boss?Math.max(0.42,1.05-e.round*0.055):rand(1.8,2.8);
+        const n=e.boss?Math.min(18,6+Math.floor((e.round||1)*1.35)):1;
+        for(let k=0;k<n;k++){ const a=Math.atan2(dy,dx)+(e.boss?(k/n*TAU+e.phase):0);
+          const bs=e.boss?190+(e.round||1)*18:180;
+          projectiles.push({foe:true,x:e.x,y:e.y,vx:Math.cos(a)*bs,vy:Math.sin(a)*bs,
+            r:e.boss?9:7,dmg:e.dmg,life:4,color:e.boss?'#ff174f':'#ff7a1a'});}
+        if(e.boss && (e.round||1)>=3){
+          const aim=Math.atan2(dy,dx), spread=0.18;
+          for(const off of [-spread,0,spread]){
+            const bs=250+(e.round||1)*12, a=aim+off;
+            projectiles.push({foe:true,x:e.x,y:e.y,vx:Math.cos(a)*bs,vy:Math.sin(a)*bs,
+              r:7,dmg:Math.round(e.dmg*0.72),life:3.2,color:'#ff2bd6'});
+          }
+        }}}
     // contact damage (no knockback)
     if(dl<e.r+player.r){
       if(player.invuln<=0){ damagePlayer(e.dmg); }
@@ -672,18 +698,18 @@ function update(dt){
   }
 
   // ---- gems ----
-  const magR=player.magnet;   // extra fast/wide pull from the 자력장 upgrade
+  const magR=105+player.magnet;   // 자력장 upgrade expands and accelerates vacuum pickup
   for(let i=gems.length-1;i>=0;i--){
     const g=gems[i]; g.age+=dt;
     // pop-out drop motion with damping (visible scatter from the kill)
     g.x+=g.vx*dt; g.y+=g.vy*dt; g.vx*=0.86; g.vy*=0.86;
     if(g.lock>0){ g.lock-=dt; continue; }        // let it visibly drop before drifting in
     const d2=dist2(g.x,g.y,player.x,player.y); const d=Math.sqrt(d2)||1;
-    // distance-scaled vacuum: gems always rush to the player (fast from afar, eased up close)
-    let speed=clamp(d*1.7, 200, 950);
-    if(d2<magR*magR) speed=Math.max(speed,700);   // 자력장 upgrade makes it even snappier
-    const step=Math.min(speed*dt, d);
-    g.x+=(player.x-g.x)/d*step; g.y+=(player.y-g.y)/d*step;
+    if(d2<magR*magR){
+      const speed=clamp(150+player.magnet*3+(magR-d)*2.2, 170, player.magnet>0?760:330);
+      const step=Math.min(speed*dt, d);
+      g.x+=(player.x-g.x)/d*step; g.y+=(player.y-g.y)/d*step;
+    }
     if(d2<(player.r+26)**2){ gainXP(g.v); gems.splice(i,1); AudioFX.xp();
       addText(player.x, player.y-26, '◆ +'+g.v+' XP', '#5fe0ff', 15); pulseXP(); }
   }
@@ -747,12 +773,6 @@ function weaponOrbit(dt){
   });
 }
 
-function weaponAura(dt){
-  const lv=player.weapons.aura; if(!lv) return;
-  const s=WEAPONS.aura.get(lv); const r2=s.radius*s.radius;
-  for(const e of enemies){ if(dist2(e.x,e.y,player.x,player.y)<r2){
-    e.hp-=s.dps*dt*player.dmgMul; e.hit=Math.max(e.hit,0.03); } }
-}
 function weaponChain(dt){
   const lv=player.weapons.chain; if(!lv) return;
   const s=WEAPONS.chain.get(lv); player.chainT-=dt;
@@ -794,8 +814,8 @@ function killEnemy(e,i){
       x:e.x+Math.cos(a)*14,y:e.y+Math.sin(a)*14,hit:0,kb:{x:0,y:0},phase:rand(0,TAU)}); } }
   if(e.elite){ // guaranteed loot + gold (no healing)
     for(let k=0;k<6;k++) spawnGem(e.x+rand(-34,34), e.y+rand(-34,34), 3);
-    runGold+=5;
-    addText(e.x,e.y-e.r,'ELITE! +5💰','#ffd34d',16);
+    runGold+=1;
+    addText(e.x,e.y-e.r,'ELITE! +1💰','#ffd34d',16);
   } else spawnGem(e.x,e.y,e.xp);
   AudioFX.kill();
 }
@@ -809,7 +829,7 @@ function onBossDefeated(e){
   addText(e.x,e.y-e.r,(e.name||'BOSS')+' 격파! +'+e.xp+' XP','#ffd34d',18);
   showBanner('ROUND '+rnd+' 클리어!','다음 라운드 준비','reward');
   AudioFX.levelup();
-  runGold+=10+rnd*4;
+  runGold+=3+rnd;
   // advance to next round
   round=rnd+1; phase='fight'; roundTimer=ROUND_LEN;
   themeTransition=1;
@@ -844,9 +864,13 @@ function openLevelUp(){
     if(cur<WEAPONS[k].max) pool.push({kind:'weapon',key:k,cur});}
   for(const k in PASSIVES){ const cur=player.passives[k]||0;
     if(cur<PASSIVES[k].max) pool.push({kind:'passive',key:k,cur});}
+  const hpRatio=player.hp/player.maxhp;
+  const healPick=player.hp<player.maxhp ? {kind:'heal'} : null;
+  if(healPick && hpRatio>=0.45 && hpRatio<0.82) pool.push(healPick);
   // shuffle & pick 3 (evolutions take priority slots)
   for(let i=pool.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[pool[i],pool[j]]=[pool[j],pool[i]];}
   let picks=evoReady.slice(0,3);
+  if(healPick && hpRatio<0.45 && picks.length<3) picks.push(healPick);
   picks=picks.concat(pool.slice(0, 3-picks.length));
   if(picks.length===0){ // all maxed -> heal
     picks=[{kind:'heal'}];
@@ -854,7 +878,7 @@ function openLevelUp(){
   const cards=$('cards'); cards.innerHTML='';
   picks.forEach(p=>{
     let def, max, name, icon, desc, cur=0, tag='', kind, cls='card';
-    if(p.kind==='heal'){ name='완전 회복'; icon='💖'; desc='체력을 가득 채웁니다'; max=1; kind='✚ 회복'; }
+    if(p.kind==='heal'){ name='완전 회복'; icon='💖'; desc='현재 체력만 즉시 회복합니다'; max=1; kind='✚ 일회성 회복'; }
     else if(p.kind==='evo'){ const e=EVO[p.key]; name=e.name; icon=e.icon; desc=e.desc; max=0;
       tag='<span class="tag evo">EVOLVE</span>'; kind='★ 진화'; cls='card evo'; }
     else { def=(p.kind==='weapon'?WEAPONS:PASSIVES)[p.key]; name=def.name; icon=def.icon; desc=def.desc;
@@ -878,8 +902,7 @@ function applyPick(p){
   else if(p.kind==='weapon'){ player.weapons[p.key]=(player.weapons[p.key]||0)+1;
     if(p.key==='orbit') rebuildOrbs(); }
   else { const k=p.key; player.passives[k]=(player.passives[k]||0)+1;
-    if(k==='hp'){ player.maxhp+=25; player.hp+=25; }
-    else if(k==='spd'){ player.spdMul+=0.12; }
+    if(k==='spd'){ player.spdMul+=0.12; }
     else if(k==='magnet'){ player.magnet+=90; }
     else if(k==='power'){ player.dmgMul+=0.15; } }
   $('lvOverlay').style.display='none';
@@ -898,13 +921,6 @@ function draw(){
 
   drawGrid();
   const T=performance.now()/1000;
-
-  // plasma aura ring (damages enemies inside)
-  if(player.weapons.aura){ const s=WEAPONS.aura.get(player.weapons.aura);
-    ctx.save(); ctx.globalAlpha=0.13+0.04*Math.sin(T*4); ctx.fillStyle='#8cff66';
-    ctx.beginPath(); ctx.arc(player.x,player.y,s.radius,0,TAU); ctx.fill();
-    ctx.globalAlpha=0.55; ctx.strokeStyle='#c8ffab'; ctx.lineWidth=2;
-    ctx.beginPath(); ctx.arc(player.x,player.y,s.radius,0,TAU); ctx.stroke(); ctx.restore(); }
 
   // ---------- ENEMY glow halos (additive, behind bodies) ----------
   ctx.save(); ctx.globalCompositeOperation='lighter';
@@ -958,16 +974,16 @@ function draw(){
     const core=gold?'#ffd34d':'#28c8ff', edge=gold?'#6e4a00':'#053a54', lite=gold?'#fff6cf':'#d8f6ff';
     const rgbCol=gold?'255,211,77':'40,200,255';
     const sc=clamp((g.age||0)/0.12,0,1);
-    const bounce=Math.sin(T*4+g.x)*2;
-    const R=13*sc;
-    // rising beacon (semi-opaque bar, normal blend -> visible on grass)
-    ctx.save(); ctx.globalAlpha=(0.42+0.20*Math.sin(T*6+g.x))*sc;
-    const bg=ctx.createLinearGradient(0,g.y-74,0,g.y-R);
-    bg.addColorStop(0,'rgba('+rgbCol+',0)'); bg.addColorStop(1,'rgba('+rgbCol+',0.75)');
-    ctx.fillStyle=bg; ctx.fillRect(g.x-2.5, g.y-74, 5, Math.max(0,74-R)); ctx.restore();
+    const bounce=Math.sin(T*4+g.x)*1.4;
+    const R=10.5*sc;
+    // compact pickup beacon, kept subtle so hostile bullets stay readable
+    ctx.save(); ctx.globalAlpha=(0.24+0.10*Math.sin(T*6+g.x))*sc;
+    const bg=ctx.createLinearGradient(0,g.y-46,0,g.y-R);
+    bg.addColorStop(0,'rgba('+rgbCol+',0)'); bg.addColorStop(1,'rgba('+rgbCol+',0.46)');
+    ctx.fillStyle=bg; ctx.fillRect(g.x-1.7, g.y-46, 3.4, Math.max(0,46-R)); ctx.restore();
     // ground drop marker ring
     ctx.save(); ctx.translate(g.x,g.y); ctx.scale(1,0.5);
-    ctx.strokeStyle=edge; ctx.lineWidth=2.5; ctx.globalAlpha=0.55*sc;
+    ctx.strokeStyle=edge; ctx.lineWidth=2; ctx.globalAlpha=0.34*sc;
     ctx.beginPath(); ctx.arc(0,R*1.9,R*1.5,0,TAU); ctx.stroke(); ctx.restore();
     // rotating crystal with dark outline + highlight
     ctx.save(); ctx.translate(g.x,g.y+bounce); ctx.rotate(T*1.4+g.x);
@@ -981,9 +997,15 @@ function draw(){
   for(const p of projectiles){ if(!p.foe) continue;
     const pulse=0.75+0.25*Math.sin(T*12+p.x);
     ctx.save(); ctx.translate(p.x,p.y);
-    ctx.shadowColor=p.color; ctx.shadowBlur=10; ctx.fillStyle=p.color; ctx.strokeStyle='#3a0010'; ctx.lineWidth=2;
+    ctx.globalCompositeOperation='source-over';
+    ctx.shadowColor=p.color; ctx.shadowBlur=8;
+    ctx.fillStyle='rgba(18,0,8,.95)';
+    ctx.beginPath(); ctx.arc(0,0,p.r*1.38,0,TAU); ctx.fill();
+    ctx.fillStyle=p.color; ctx.strokeStyle='rgba(255,235,235,.95)'; ctx.lineWidth=1.6;
     ctx.beginPath(); ctx.arc(0,0,p.r*pulse,0,TAU); ctx.fill(); ctx.stroke();
-    ctx.shadowBlur=0; ctx.fillStyle='rgba(255,255,255,.85)';
+    ctx.shadowBlur=0; ctx.strokeStyle='rgba(40,0,12,.9)'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(-p.r*1.05,0); ctx.lineTo(p.r*1.05,0); ctx.moveTo(0,-p.r*1.05); ctx.lineTo(0,p.r*1.05); ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,.92)';
     ctx.beginPath(); ctx.arc(-p.r*0.25,-p.r*0.25,p.r*0.32,0,TAU); ctx.fill();
     ctx.restore(); }
 
@@ -1409,7 +1431,7 @@ function gameOver(){
   state='over'; clearInput(); AudioFX.over(); vibrate([40,60,120]);
   const best=Math.max(+(localStorage.getItem('ns_best_round')||0), round);
   localStorage.setItem('ns_best_round',best);
-  const earned=Math.floor((round*28 + killCount*1.2)*goldMul()) + runGold;
+  const earned=Math.floor((round*5 + killCount*0.2)*goldMul()) + runGold;
   META.gold += earned; saveMeta();
   $('sRound').textContent='ROUND '+round;
   $('sKills').textContent=killCount;
@@ -1505,7 +1527,7 @@ function loop(now){
 player=newPlayer(); enemies=[];projectiles=[];gems=[];particles=[];texts=[];orbs=[];
 requestAnimationFrame(loop);
 })();
-/* build:v20260703-no-auto-heal */
+/* build:v20260703-balance-pass */
 </script>
 <script>
 // Offline install (PWA): only over http/https, never on file://

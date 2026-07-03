@@ -1,5 +1,5 @@
 ﻿/* NEON SURVIVORS service worker - caches the app shell for offline play */
-const CACHE = 'neon-survivors-v20260703-no-auto-heal';
+const CACHE = 'neon-survivors-v20260703-balance-pass';
 const ASSETS = [
   './',
   './index.html',
