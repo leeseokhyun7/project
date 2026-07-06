@@ -482,7 +482,7 @@ let cam={x:0,y:0};
 let time=0, killCount=0, spawnTimer=0, difficulty=0, bossActive=false;
 let round=1, phase='fight', roundTimer=0, warnT=0, pendingLevels=0, runGold=0;
 const ROUND_LEN=38, WARN_LEN=2.6;
-const MAP=800;   // half-extent of the playfield (world spans -MAP..MAP)
+const MAP=500;   // half-extent of the playfield (world spans -MAP..MAP → 1000×1000)
 const ROUND_THEMES=[
   {name:'초원',top:'#4a9d43',mid:'#3c8b39',bot:'#2f7530',sun:'rgba(240,255,180,0.20)',patchDark:'rgba(30,80,30,0.16)',patchLight:'rgba(150,210,120,0.12)',grassDark:'#2c7a2c',grassLight:'#5cb84a',fence:'#264e20',fenceLine:'#cdb45f',vign:'rgba(12,34,12,0.42)'},
   {name:'가을 들판',top:'#9b8a43',mid:'#7e6f2c',bot:'#5b5f28',sun:'rgba(255,205,120,0.20)',patchDark:'rgba(78,54,26,0.16)',patchLight:'rgba(214,170,80,0.12)',grassDark:'#6a5b22',grassLight:'#b68d32',fence:'#5a4225',fenceLine:'#e0b86a',vign:'rgba(48,34,14,0.44)'},
@@ -577,7 +577,7 @@ function goldMul(){ return 1 + 0.12*(META.up.gold||0); }
 
 function newPlayer(){
   const ch=CHARACTERS[selectedChar]||CHARACTERS.ranger;
-  const p={ x:0,y:0,r:16, baseSpeed:218, hp:100, maxhp:100,
+  const p={ x:0,y:0,r:16, baseSpeed:250, hp:100, maxhp:100,
     xp:0, level:1, next:5, kills:0, xpMul:1,
     weapons:{[ch.weapon]:1}, passives:{}, ev:{}, charId:selectedChar, runEvos:0,
     dmgMul:1, spdMul:1, coolMul:1, magnet:0, dr:0, crit:0, luck:0, goldBonus:1, bossDmg:1, invuln:0,
